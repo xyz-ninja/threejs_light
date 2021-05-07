@@ -1,0 +1,88 @@
+<html>
+<head>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r71/three.min.js"></script>
+	<style>
+		body { margin: 0; }
+	</style>
+</heda>
+<body>
+
+	<script id="fragShader" type="shader-code">
+		uniform sampler2D tex;
+		uniform vec2 res;
+		uniform vec3 light;
+
+		void main() {
+			//vec2 cur_pixel = gl_FragCoord.xy / res.xy;
+			vec2 cur_pixel = vec2(0.0);
+			cur_pixel.x = gl_FragCoord.x / res.y;
+			cur_pixel.y = gl_FragCoord.y / res.y;
+
+			vec4 cur_color = texture2D(tex,cur_pixel);
+
+			float dist = distance(gl_FragCoord.xy , light.xy);
+			if (light.z * res.x > dist) {
+				gl_FragColor = cur_color;
+			} else {
+				gl_FragColor = vec4(0.0);
+			}
+
+			
+			
+		}
+	</script>
+
+	<script>
+		THREE.ImageUtils.crossOrigin = ''; // позволяет загружать внешние изображения
+
+		var textureURL = "https://raw.githubusercontent.com/tutsplus/Beginners-Guide-to-Shaders/master/Part3/images/blocks.JPG";
+		var texture = THREE.ImageUtils.loadTexture(textureURL);
+
+		var shaderCode = document.getElementById("fragShader").innerHTML;
+		var uniforms = {
+			light : {type : 'v3' , value: new THREE.Vector3()},
+			tex : 	{type : 't', value: texture},
+			res : 	{type : 'v2', value : new THREE.Vector2(window.innerWidth,window.innerHeight)}
+		};
+
+		var scene;
+		var camera;
+		var renderer;
+		function scene_setup(){
+
+			scene = new THREE.Scene();
+			camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );
+
+			renderer = new THREE.WebGLRenderer();
+			renderer.setSize( window.innerWidth, window.innerHeight );
+			document.body.appendChild( renderer.domElement );
+		}
+		scene_setup();
+		
+		var material = new THREE.ShaderMaterial({uniforms:uniforms, fragmentShader:shaderCode});
+		var geometry = new THREE.PlaneGeometry( 10 , 10 );
+		var sprite = new THREE.Mesh(geometry , material);
+		scene.add( sprite );
+		sprite.position.z = -3;
+		
+		var timer = 0;
+		function render() {
+			uniforms.light.value.z = 0.2;
+
+			uniforms.res.value.x = window.innerWidth;
+			uniforms.res.value.y = window.innerHeight;
+
+
+			requestAnimationFrame( render );
+			renderer.render( scene, camera );
+			timer += 0.01;
+		}
+		render();
+
+		document.onmousemove = function(e){
+			uniforms.light.value.x = e.clientX;
+			uniforms.light.value.y = window.innerHeight - e.clientY;
+		}
+	</script>
+</body>
+</html>
